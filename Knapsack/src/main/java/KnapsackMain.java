@@ -7,10 +7,11 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-public class ナップサック問題 {
+public class KnapsackMain {
 
 	private static final Pattern p = Pattern.compile(",");
 
+	
 	public static void main(String[] args) throws IOException {
 		String args0 = "20";
 		String args1 = "C:\\workspaces\\devs\\Knapsack\\input_file.csv";
