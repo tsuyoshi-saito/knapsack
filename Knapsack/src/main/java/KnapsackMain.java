@@ -1,4 +1,6 @@
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,40 +13,48 @@ public class KnapsackMain {
 
 	private static final Pattern p = Pattern.compile(",");
 
-	
 	public static void main(String[] args) throws IOException {
-		String args0 = "20";
-		String args1 = "C:\\workspaces\\devs\\Knapsack\\input_file.csv";
-		String args2 = "C:\\workspaces\\devs\\Knapsack\\output2_file.csv";
-		Path path = Paths.get(args1);
-		List<String> ids = new ArrayList<>();
+		Path path = Paths.get(args[1]);
+		List<Baggage> outBaggages = new ArrayList<>();
 		try (Stream<String> lines = Files.lines(path)) {
-			Baggage[] array = lines.map(Baggage::toBaggage).sorted((a1, a2) -> Double.compare(a2.score, a1.score)).toArray(Baggage[]::new);
-			int knapsize = Integer.parseInt(args0);
-			double currentsize = 0;
-			for (Baggage a : array) {
-				currentsize += a.size;
-				if (currentsize > knapsize) {
-					break;
+			Baggage[] baggages = lines.map(Baggage::toBaggage).sorted((a1, a2) -> a2.score.compareTo(a1.score))
+//					.peek(System.out::println)
+					.toArray(Baggage[]::new);
+			BigDecimal knapsize = new BigDecimal(args[0]);
+			BigDecimal currentsize = new BigDecimal(0);
+			for (Baggage baggage : baggages) {
+				if (knapsize.compareTo(currentsize.add(baggage.size)) > 0) {
+					currentsize = currentsize.add(baggage.size);
+					outBaggages.add(baggage);
 				}
-				ids.add(a.id);
-				System.out.println(a.toString());
-				System.out.println(currentsize);
 			}
+		}
+
+		try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(args[2]))) {
+			outBaggages.stream()
+			.peek(System.out::println)
+			.map(Baggage::toOutputLine).forEach(t -> {
+				try {
+					writer.write(t);
+					writer.newLine();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			});
 		}
 	}
 
 	static class Baggage {
-		final public String id;
-		final public double size;
-		final public double priority;
-		final public double score;
+		final private String id;
+		final private BigDecimal size;
+		final private BigDecimal priority;
+		final private BigDecimal score;
 
 		Baggage(String[] split) {
 			this.id = split[0];
-			this.size = Double.parseDouble(split[1]);
-			this.priority = Double.parseDouble(split[2]);
-			this.score = priority / size;
+			this.size = new BigDecimal(split[1]);
+			this.priority = new BigDecimal(split[2]);
+			this.score = priority.divide(size, BigDecimal.ROUND_HALF_EVEN);
 		}
 
 		static Baggage toBaggage(String line) {
@@ -53,6 +63,14 @@ public class KnapsackMain {
 
 		public String toString() {
 			return String.format("%s,%s,%s,%s", id, size, priority, score);
+		}
+
+		public String toOutputLine() {
+			return String.format("%s,%s,%s", id, size, priority);
+		}
+
+		public BigDecimal getSize() {
+			return this.size;
 		}
 	}
 }
